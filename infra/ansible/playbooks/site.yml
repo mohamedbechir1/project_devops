@@ -1,0 +1,11 @@
+---
+- hosts: app
+  become: true
+  roles:
+    - docker
+    - app
+
+- hosts: jenkins
+  become: true
+  roles:
+    - jenkins
