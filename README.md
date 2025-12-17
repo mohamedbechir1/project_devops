@@ -28,7 +28,7 @@ L'objectif principal est de mettre en œuvre les meilleures pratiques DevOps à 
 
 ---
 
-## 🏗 Architecture du Projet
+## 🏗 Architecture du projet
 
 L'application suit une architecture micro-services où chaque composant a une responsabilité unique :
 
