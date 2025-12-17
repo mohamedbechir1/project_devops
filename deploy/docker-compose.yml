@@ -20,8 +20,7 @@ services:
       retries: 10
 
   ai:
-    build:
-      context: ../ai-service
+    image: mohamedbechir1/ai-service:latest
     container_name: devops_ai
     ports:
       - "8001:8001"
@@ -32,8 +31,7 @@ services:
       retries: 5
 
   backend:
-    build:
-      context: ../backend
+    image: mohamedbechir1/backend:latest
     container_name: devops_backend
     environment:
       DB_HOST: db
@@ -52,8 +50,7 @@ services:
       - "8000:8000"
 
   frontend:
-    build:
-      context: ../frontend
+    image: mohamedbechir1/frontend:latest
     container_name: devops_frontend
     depends_on:
       - backend
