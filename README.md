@@ -36,6 +36,6 @@ curl -X POST http://localhost:8000/api/sentiment \
 ```
 
 ## Next steps
-- Vagrant + Ansible (2 VMs: vm-jenkins, vm-app+monitor)
+- Vagrant + Ansible (3 VMs: vm-jenkins, vm-app, monitor)
 - Jenkins pipeline + Docker Hub push
 - Nagios monitoring
