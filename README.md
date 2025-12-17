@@ -60,7 +60,7 @@ graph TD
         Repo[(GitHub Repository)]
     end
 
-    subgraph CI_CD_Infrastructure [Infrastructure CI/CD (vm-jenkins)]
+    subgraph CI_CD_Infrastructure ["Infrastructure CI/CD - vm-jenkins"]
         Jenkins_Server[Serveur Jenkins]
         Pipeline[Pipeline Automatisé]
     end
@@ -69,7 +69,7 @@ graph TD
         DockerHub((Docker Hub))
     end
 
-    subgraph Production_Infrastructure [Environnement de Production (vm-app)]
+    subgraph Production_Infrastructure ["Environnement de Production - vm-app"]
         Ansible_Agent[Ansible Provisioning]
         subgraph Docker_Swarm [Runtime Docker]
             Frontend[Conteneur Frontend]
