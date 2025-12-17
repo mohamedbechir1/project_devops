@@ -3,7 +3,17 @@
 
 Vagrant.configure("2") do |config|
   config.vm.box = "ubuntu/jammy64"
-
+  
+  # Increase boot timeout
+  config.vm.boot_timeout = 600
+  
+  # Disable automatic box update checking
+  config.vm.box_check_update = false
+  
+  # SSH configuration
+  config.ssh.insert_key = false
+  config.ssh.forward_agent = true
+  
   # Shared folder
   config.vm.synced_folder "..", "/vagrant", type: "virtualbox"
 
@@ -12,26 +22,77 @@ Vagrant.configure("2") do |config|
     vm.vm.hostname = "vm-jenkins"
     vm.vm.network "private_network", ip: "192.168.56.10"
     vm.vm.provider "virtualbox" do |vb|
-      vb.memory = 4096
+      vb.memory = 2048
       vb.cpus = 2
+      vb.customize ["modifyvm", :id, "--uart1", "0x3F8", "4"]
+      vb.customize ["modifyvm", :id, "--uartmode1", "file", File::NULL]
     end
     vm.vm.provision "shell", inline: <<-SHELL
       sudo apt-get update -y
       sudo apt-get install -y python3 python3-pip curl git
+      sudo apt-get install -y openjdk-11-jdk wget gnupg
+      wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo apt-key add -
+      sudo sh -c 'echo deb http://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
+      sudo apt-get update -y
+      sudo apt-get install -y jenkins
+      sudo systemctl enable jenkins
+      sudo systemctl start jenkins
     SHELL
   end
 
-  # vm-app (app + monitoring)
+  # vm-app (app server)
   config.vm.define "vm-app" do |vm|
     vm.vm.hostname = "vm-app"
     vm.vm.network "private_network", ip: "192.168.56.11"
     vm.vm.provider "virtualbox" do |vb|
-      vb.memory = 4096
+      vb.memory = 2048
       vb.cpus = 2
+      vb.customize ["modifyvm", :id, "--uart1", "0x3F8", "4"]
+      vb.customize ["modifyvm", :id, "--uartmode1", "file", File::NULL]
     end
     vm.vm.provision "shell", inline: <<-SHELL
       sudo apt-get update -y
       sudo apt-get install -y python3 python3-pip curl git
+      # Install Docker
+      sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+      curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+      sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+      sudo apt-get update -y
+      sudo apt-get install -y docker-ce
+      # Install Docker Compose
+      sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+      sudo chmod +x /usr/local/bin/docker-compose
+      sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+      # Add vagrant user to docker group
+      sudo usermod -aG docker vagrant
+    SHELL
+  end
+
+  # vm-monitoring (Nagios)
+  config.vm.define "vm-monitoring" do |vm|
+    vm.vm.hostname = "vm-monitoring"
+    vm.vm.network "private_network", ip: "192.168.56.12"
+    vm.vm.provider "virtualbox" do |vb|
+      vb.memory = 2048
+      vb.cpus = 1
+    end
+    vm.vm.provision "shell", inline: <<-SHELL
+      sudo apt-get update -y
+      sudo apt-get install -y wget build-essential apache2 php libapache2-mod-php php-gd libgd-dev unzip
+      sudo useradd nagios -m -s /bin/bash
+      sudo groupadd nagios
+      sudo usermod -a -G nagios nagios
+      cd /tmp
+      wget https://github.com/NagiosEnterprises/nagioscore/releases/download/nagios-4.4.6/nagios-4.4.6.tar.gz
+      tar -xvzf nagios-4.4.6.tar.gz
+      cd nagios-4.4.6
+      ./configure
+      make all
+      sudo make install
+      sudo make install-commandmode
+      sudo make install-init
+      sudo systemctl enable nagios
+      sudo systemctl start nagios
     SHELL
   end
 end
