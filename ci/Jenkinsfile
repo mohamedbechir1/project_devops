@@ -1,0 +1,77 @@
+pipeline {
+  agent {
+    docker {
+      // Use Docker-in-Docker image; requires agent to allow --privileged
+      image 'docker:24-dind'
+      args '--privileged -v /var/run/docker.sock:/var/run/docker.sock'
+    }
+  }
+
+  environment {
+    IMAGE_PREFIX = "${env.DOCKERHUB_USER ?: 'mohamedbechir1'}/devops-app"
+  }
+
+  parameters {
+    booleanParam(name: 'SKIP_PUSH', defaultValue: true, description: 'Skip pushing images to Docker Hub')
+    booleanParam(name: 'SKIP_DEPLOY', defaultValue: true, description: 'Skip Ansible deploy to VMs')
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+        script {
+          env.TAG = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+        }
+      }
+    }
+
+    stage('Run Tests') {
+      steps {
+        sh './ci/run-tests.sh'
+      }
+    }
+
+    stage('Build Images') {
+      steps {
+        script {
+          echo "Building images with tag ${env.TAG}"
+          sh "docker build -t ${IMAGE_PREFIX}-frontend:${TAG} ../frontend"
+          sh "docker build -t ${IMAGE_PREFIX}-backend:${TAG} ../backend"
+          sh "docker build -t ${IMAGE_PREFIX}-ai:${TAG} ../ai-service"
+        }
+      }
+    }
+
+    stage('Push Images') {
+      when { expression { return !params.SKIP_PUSH } }
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', passwordVariable: 'DOCKERHUB_TOKEN', usernameVariable: 'DOCKERHUB_USER')]) {
+          sh 'echo $DOCKERHUB_TOKEN | docker login -u $DOCKERHUB_USER --password-stdin'
+          sh "docker push ${IMAGE_PREFIX}-frontend:${TAG}"
+          sh "docker push ${IMAGE_PREFIX}-backend:${TAG}"
+          sh "docker push ${IMAGE_PREFIX}-ai:${TAG}"
+        }
+      }
+    }
+
+    stage('Deploy') {
+      when { expression { return !params.SKIP_DEPLOY } }
+      steps {
+        sh "ansible-playbook -i infra/ansible/inventory.ini infra/ansible/playbooks/site.yml --extra-vars \"image_tag=${TAG} image_prefix=${IMAGE_PREFIX}\""
+      }
+    }
+  }
+
+  post {
+    success {
+      echo 'Pipeline succeeded.'
+    }
+    failure {
+      echo 'Pipeline failed.'
+    }
+    always {
+      cleanWs()
+    }
+  }
+}
