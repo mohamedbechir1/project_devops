@@ -85,7 +85,7 @@ graph TD
     Jenkins_Server -->|Exécute| Pipeline
     Pipeline -->|1. Build & Test| Pipeline
     Pipeline -->|2. Push Images| DockerHub
-    Pipeline -->|3. Trigger Deploy (Ansible)| Ansible_Agent
+    Pipeline -->|3. Trigger Deploy via Ansible| Ansible_Agent
     Ansible_Agent -->|Pull Images| DockerHub
     Ansible_Agent -->|Run Services| Docker_Swarm
     
