@@ -2,11 +2,20 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 POSITIVE_WORDS = {
-    "love", "amazing", "best", "fantastic", "wonderful", "great", "good", "happy", "like", "nice"
+    "love", "amazing", "best", "fantastic", "wonderful", "great", "good", "happy", "like", "nice",
+    "excellent", "awesome", "perfect", "positive", "pleasant", "brilliant", "superb",
+    "satisfied", "enjoy", "cool", "beautiful", "impressive", "outstanding",
+    "successful", "delightful", "smile", "joy", "cheerful"
 }
+
 NEGATIVE_WORDS = {
-    "hate", "terrible", "bad", "worst", "awful", "horrible", "stupid","disappointing", "sad", "angry", "poor"
+    "hate", "terrible", "bad", "worst", "awful", "horrible", "stupid", "disappointing",
+    "sad", "angry", "poor",
+    "negative", "annoying", "boring", "ugly", "fail", "failure", "painful",
+    "frustrating", "useless", "dirty", "slow", "problem", "issue",
+    "disaster", "unhappy", "cry", "mad"
 }
+
 
 class SentimentRequest(BaseModel):
     text: str
